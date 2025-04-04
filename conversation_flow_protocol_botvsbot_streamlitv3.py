@@ -136,24 +136,39 @@ if 'paused' not in st.session_state:
 if 'initialized' not in st.session_state:
     st.session_state.initialized = False
 
-if st.sidebar.button("Start"):
-    st.session_state.running = True
-    st.session_state.paused = False
-#if st.sidebar.button("Pause"):
-#    st.session_state.paused = True
-#if st.sidebar.button("Continue"):
-#    st.session_state.paused = False
-#    if st.session_state.initialized == True:
-#        for msg in st.session_state.conversation_history_complete:
-#            role = "user" if msg["role"] == "user" else "assistant"
-#            icon = "👤" if role == "user" else "🤖"
-#            with st.chat_message(role):
-#                st.markdown(f"{icon} **{role.title()}:** {msg['content']}")
-if st.sidebar.button("Stop"):
-    st.session_state.running = False
-    st.session_state.paused = False
-    st.session_state.initialized = False
-    st.session_state.intro_shown = False
+# Sidebar access control
+st.sidebar.subheader("🔐 Access Control")
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+
+if not st.session_state.authenticated:
+    password = st.sidebar.text_input("Enter password to unlock controls", type="password")
+    if password == "sapientusmalaysia":
+        st.session_state.authenticated = True
+        st.sidebar.success("✅ Access granted.")
+    elif password:
+        st.sidebar.error("❌ Incorrect password.")
+
+
+if st.session_state.authenticated:
+    if st.sidebar.button("Start"):
+        st.session_state.running = True
+        st.session_state.paused = False
+    #if st.sidebar.button("Pause"):
+    #    st.session_state.paused = True
+    #if st.sidebar.button("Continue"):
+    #    st.session_state.paused = False
+    #    if st.session_state.initialized == True:
+    #        for msg in st.session_state.conversation_history_complete:
+    #            role = "user" if msg["role"] == "user" else "assistant"
+    #            icon = "👤" if role == "user" else "🤖"
+    #            with st.chat_message(role):
+    #                st.markdown(f"{icon} **{role.title()}:** {msg['content']}")
+    if st.sidebar.button("Stop"):
+        st.session_state.running = False
+        st.session_state.paused = False
+        st.session_state.initialized = False
+        st.session_state.intro_shown = False
 
 st.title("Bilateral AI Customer Service Chatbot")
 
