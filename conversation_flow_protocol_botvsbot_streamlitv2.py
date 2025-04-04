@@ -166,6 +166,107 @@ def check_query_context(user_query, chat_history):
 # (Keep your other helper functions: update_step_tracking, extract_steps2, normalize,
 # get_last_step, get_step_by_normalized_name, extract_number, get_original_step,
 # find_step_index, update_step_tracking (the second one seems misnamed/redundant?), clean_step_names)
+def update_step_tracking(self_performed_data, step_status):
+    """
+    Updates step tracking dictionary with self-performed steps.
+    
+    Args:
+        self_performed_data (dict): JSON response from LLM.
+        step_status (dict): Dictionary tracking status of each troubleshooting step.
+
+    Returns:
+        dict: Updated step tracking dictionary.
+    """
+    for detected_step in self_performed_data["self_performed_steps"]:
+        step_name = detected_step["step"]
+        result = detected_step["result"].lower()
+
+        if step_name in step_status:
+            step_status[step_name]["mode"] = "self-performed"
+            step_status[step_name]["result"] = result
+
+    return step_status
+
+def extract_steps2(troubleshooting_dict):
+    """
+    Extracts all troubleshooting steps and initializes their status with both mode and result.
+
+    Args:
+        troubleshooting_dict (dict): The dictionary containing troubleshooting steps.
+
+    Returns:
+        dict: A dictionary with each step mapped to a dict containing mode and result.
+    """
+    step_status = {
+        step.lower(): {
+            "mode": "none",  # Possible values: none, self-performed, agent-guided
+            "result": "none"  # Possible values: none, success, failure, unclear
+        } 
+        for step in troubleshooting_dict.keys()
+    }
+    return step_status
+
+def normalize(text):
+    # Remove section numbers, emojis, symbols, extra whitespace
+    text = re.sub(r'^\s*\w+(\.\w+)*\.?\s*', '', text)  # Remove leading "2A.1."
+    text = re.sub(r'[^\w\s]', '', text)  # Remove emojis and punctuation
+    return text.lower().strip()
+
+def get_last_step(data):
+    if len(data) < 2:
+        return None  # Return None if there are less than 2 dictionaries
+    return data[-1].get("step") 
+
+def get_step_by_normalized_name(normalized_name, knowledge_base):
+    """Find the actual step key from its normalized form."""
+    for key in knowledge_base:
+        if normalize(key) == normalized_name:
+            return key
+    return None
+
+def extract_number(user_input):
+    """ Extract the first number found in the input string """
+    match = re.search(r'\d+', user_input)  # Find first number
+    return int(match.group()) if match else None  # Convert to int if found, else None
+
+def get_original_step(complete_step_tracking_reversed, user_input):
+    user_choice = extract_number(user_input)  # Extract numeric part
+    
+    if user_choice is None:
+        return "Wrong input format"  # No valid number found
+    
+    if 1 <= user_choice <= len(complete_step_tracking_reversed):
+        return complete_step_tracking_reversed[user_choice - 1]["step"]  # Retrieve original step
+    
+    return "Number is out of range!" # Number is out of range
+
+def find_step_index(complete_step_tracking_reversed, selected_step):
+    """Finds the index of the selected step in the original list."""
+    for idx, item in enumerate(complete_step_tracking_reversed):
+        if item["step"] == selected_step:
+            return idx  # Return the index of the selected step
+    return None  # If not found, return None
+
+def update_step_tracking(complete_step_tracking_reversed, selected_step):
+    """Updates the list to include steps only up to the selected step."""
+    step_index = find_step_index(complete_step_tracking_reversed, selected_step)
+    
+    if step_index is None:
+        return "Step not found."  # Handle case where step does not exist
+    
+    return complete_step_tracking_reversed[:step_index + 1]  # Keep only steps up to selected one
+def clean_step_names(complete_step_tracking_reversed):
+    cleaned_steps = []
+
+    for idx, item in enumerate(complete_step_tracking_reversed):
+        cleaned_step = re.sub(r'^[\d\.a-zA-Z]+ ', '', item['step'])  # Remove leading numbering
+        formatted_step = f"{idx + 1}. {cleaned_step}"  # New numbering
+        cleaned_steps.append(formatted_step)
+
+    return "\n".join(cleaned_steps)
+
+
+
 
 # Make sure this function is correctly defined (seems like a duplicate name?)
 def update_selected_steps(complete_step_tracking_reversed, selected_step):
