@@ -232,7 +232,7 @@ Response by the customer service operator: {response_to_user}
 Chat history : {conversation_history}
 
 Role: You are a telecommunications customer experiencing slow mobile data speeds. Engage with the customer service operator to resolve the issue naturally.
-Root Cause (Hidden from Customer): provider ongoing outage in the neighbourhood.
+Root Cause (Hidden from Customer): provider ongoing outage in the neighbourhood and reported in the provider website.
 
 Guidelines:
 -Describe the Issue Clearly:

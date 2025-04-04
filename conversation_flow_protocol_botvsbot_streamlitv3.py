@@ -120,10 +120,10 @@ def clean_step_names(complete_step_tracking_reversed):
         cleaned_steps.append(formatted_step)
     return "\n".join(cleaned_steps)
 
-def type_message(role, icon, message, delay=0.03):
+def type_message(role, icon, message, delay=0.05):
     with st.chat_message(role):
         msg_placeholder = st.empty()
-        full_message = f"{icon} **{role.title()}:** "
+        full_message = f"{icon} **{role}:** "
         for i in range(len(message) + 1):
             msg_placeholder.markdown(full_message + message[:i])
             time.sleep(delay)
@@ -131,14 +131,31 @@ def type_message(role, icon, message, delay=0.03):
 # === Streamlit UI Setup ===
 if 'running' not in st.session_state:
     st.session_state.running = False
+if 'paused' not in st.session_state:
+    st.session_state.paused = False
+if 'initialized' not in st.session_state:
+    st.session_state.initialized = False
 
 if st.sidebar.button("Start"):
     st.session_state.running = True
-
+    st.session_state.paused = False
+#if st.sidebar.button("Pause"):
+#    st.session_state.paused = True
+#if st.sidebar.button("Continue"):
+#    st.session_state.paused = False
+#    if st.session_state.initialized == True:
+#        for msg in st.session_state.conversation_history_complete:
+#            role = "user" if msg["role"] == "user" else "assistant"
+#            icon = "👤" if role == "user" else "🤖"
+#            with st.chat_message(role):
+#                st.markdown(f"{icon} **{role.title()}:** {msg['content']}")
 if st.sidebar.button("Stop"):
     st.session_state.running = False
+    st.session_state.paused = False
+    st.session_state.initialized = False
+    st.session_state.intro_shown = False
 
-st.title("Customer Service Simulation")
+st.title("Bilateral AI Customer Service Chatbot")
 
 # Load env
 load_dotenv()
@@ -169,36 +186,58 @@ chat_together = ChatTogether(
     max_retries=2,
 )
 
-if 'conversation_history_complete' not in st.session_state:
+# Initialize state variables
+if not st.session_state.initialized:
     st.session_state.conversation_history_complete = []
+    st.session_state.conversation_history = []
+    st.session_state.step_tracking = []
+    st.session_state.complete_step_tracking_reversed = []
+    st.session_state.complete_step_tracking = []
+    st.session_state.current_step = "0 Introduction & Issue Confirmation"
+    st.session_state.step_status = extract_steps2(knowledge_base)
+    st.session_state.skip_key = 0
+    st.session_state.initialized = True
+
+# === Display chat history if paused or idle ===
+if not st.session_state.running or st.session_state.paused:
+    for msg in st.session_state.conversation_history_complete:
+        role = "user" if msg["role"] == "user" else "AI"
+        icon = "👤" if role == "user" else "🤖"
+        with st.chat_message(role):
+            st.markdown(f"{icon} **{role.title()}:** {msg['content']}")
+
 
 # === Main Loop ===
 if st.session_state.running:
-    current_step = "0 Introduction & Issue Confirmation"
-    response_to_user = "How can I help you?"
-    type_message("assistant", "🤖", response_to_user)
-
-    conversation_history = []
-    step_tracking = []
-    complete_step_tracking_reversed = []
-    complete_step_tracking = []
-    step_status = extract_steps2(knowledge_base)
-    skip_key = 0
-
     while st.session_state.running:
-        if skip_key == 0:
-            message = telcouserprompt.format_messages(response_to_user=response_to_user, conversation_history=conversation_history)
+        if st.session_state.paused:
+            st.warning("⏸ Paused. Click 'Continue' to resume.")
+            break
+
+        current_step = st.session_state.current_step
+        # Inside the main loop, replace the response_to_user assignment block with:
+        if 'intro_shown' not in st.session_state:
+            st.session_state.intro_shown = False
+
+        response_to_user = ""
+        if current_step == "0 Introduction & Issue Confirmation" and not st.session_state.intro_shown:
+            response_to_user = "How can I help you?"
+            st.session_state.conversation_history_complete.append({"role": "customer service", "content": response_to_user})
+            st.session_state.intro_shown = True
+            type_message("AI", "🤖", response_to_user)
+
+        if st.session_state.skip_key == 0:
+            message = telcouserprompt.format_messages(response_to_user=response_to_user, conversation_history=st.session_state.conversation_history)
             user_message = chat_groq.invoke(message[0].content)
             user_input = user_message.content
             type_message("user", "👤", user_input)
 
-            time.sleep(5)
-            depends_on_context, relevant_context, how_context_relate_query = check_query_context(user_input, conversation_history)
+            depends_on_context, relevant_context, how_context_relate_query = check_query_context(user_input, st.session_state.conversation_history)
             current_step = current_step.lower().replace("step ", "")
             matched_key = get_step_by_normalized_name(normalize(current_step), knowledge_base)
 
             if not matched_key:
-                type_message("assistant", "❌", "Step not found. Ending conversation.")
+                type_message("AI", "❌", "Step not found. Ending conversation.")
                 st.session_state.running = False
                 break
 
@@ -207,7 +246,7 @@ if st.session_state.running:
             condition_texts = [c["condition"] for c in conditions]
             listofconditions = {chr(10).join(f"- {c}" for c in condition_texts)}
             condition_check_prompt = conditioncheckprompt.format_messages(
-                conversation_history=conversation_history,
+                conversation_history=st.session_state.conversation_history,
                 how_context_relate_query=how_context_relate_query,
                 user_input=user_input,
                 listofconditions=listofconditions)
@@ -227,7 +266,7 @@ if st.session_state.running:
 
         if matched and matched["next_step"].lower() not in ["remain", "step remain"]:
             if matched["next_step"].lower() == "step 51 close the chat":
-                type_message("assistant", "💬", "Chat ending!")
+                type_message("AI", "🤖", "Chat ending!")
                 st.session_state.running = False
                 break
             else:
@@ -238,22 +277,26 @@ if st.session_state.running:
                     "condition_met": matched["next_step"].lower(),
                     "next step": matched["next_step"].lower()
                 }
-                complete_step_tracking.append(complete_step_data)
-                complete_step_tracking_reversed.append(complete_step_data)
+                st.session_state.complete_step_tracking.append(complete_step_data)
+                st.session_state.complete_step_tracking_reversed.append(complete_step_data)
                 current_step = next_step.lower().replace("step ", "")
-            matched_key = get_step_by_normalized_name(normalize(current_step), knowledge_base)
-            step_data = knowledge_base.get(matched_key, {})
+                st.session_state.current_step = current_step
+                matched_key = get_step_by_normalized_name(normalize(current_step), knowledge_base)
+                step_data = knowledge_base.get(matched_key, {})
 
         data_to_collect = step_data.get("data_to_collect_from_user", "")
         approaches = step_data.get("approaches_for_llm_to_collect_data", step_data.get("approaches_for_closing_chat", []))
         listofapproaches = {chr(10).join(f"- {a}" for a in approaches)}
         if normalize(current_step) == "summary":
-            listofsteps = clean_step_names(complete_step_tracking_reversed)
-            conversation_history = st.session_state.conversation_history_complete
-            guidance_prompt = summaryprompt.format_messages(conversation_history=conversation_history, user_input=user_input, listofsteps=listofsteps)
+            listofsteps = clean_step_names(st.session_state.complete_step_tracking_reversed)
+            st.session_state.conversation_history = st.session_state.conversation_history_complete
+            guidance_prompt = summaryprompt.format_messages(
+                conversation_history=st.session_state.conversation_history,
+                user_input=user_input,
+                listofsteps=listofsteps)
         else:
             guidance_prompt = customerserviceprompt.format_messages(
-                conversation_history=conversation_history,
+                conversation_history=st.session_state.conversation_history,
                 how_context_relate_query=how_context_relate_query,
                 user_input=user_input,
                 data_to_collect=data_to_collect,
@@ -262,10 +305,13 @@ if st.session_state.running:
         reply = chat_groq.invoke(guidance_prompt[0].content)
         response_to_user = reply.content
 
-        type_message("assistant", "🤖", response_to_user)
+        type_message("AI", "🤖", response_to_user)
 
         st.session_state.conversation_history_complete.append({"role": "user", "content": user_input})
         st.session_state.conversation_history_complete.append({"role": "customer service", "content": response_to_user})
-        step_tracking.append(current_step)
-        conversation_history = st.session_state.conversation_history_complete[-10:]
+        st.session_state.step_tracking.append(current_step)
+        st.session_state.conversation_history = st.session_state.conversation_history_complete[-10:]
         time.sleep(1)
+
+if not st.session_state.running and not st.session_state.paused:
+    st.rerun()

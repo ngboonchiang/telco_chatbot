@@ -1,8 +1,15 @@
 {
-    "name": "Python: Current File",
-    "type": "python",
-    "request": "launch",
-    "program": "${file}",
-    "python": "C:/home/oem/miniconda3/envs/myenv2/bin/python",
-    "console": "integratedTerminal"
+    "version": "0.1.0",
+    "configurations": [
+        {
+            "name": "debug streamlit",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/home/oem/miniconda3/envs/myenv2/bin/streamlit",  // /home/xx/tmp/venv/bin/streamlit",
+            "args": [
+                "run",
+                "conversation_flow_protocol_botvsbot_streamlitv3.py"
+            ]
+        }
+    ]
 }

@@ -274,7 +274,7 @@ b. Finally, confirm if user wish to Close the Chat or continue troubleshoot. Do 
 *if user agrees to close chat-Step 51 Close the Chat 
 *if user requests to continue troubleshooting-Revisit Previous Step
 *if user requests to move to previous step-Proceed to previous step
-*if the user's response is unclear-remain
+*if the user's response is unclear-Step 51 Close the Chat
 
 
 

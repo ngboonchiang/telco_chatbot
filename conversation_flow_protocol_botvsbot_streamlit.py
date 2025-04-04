@@ -334,7 +334,8 @@ if start_chat and not st.session_state.stop:
                 message = telcouserprompt.format_messages(response_to_user=response_to_user,conversation_history=conversation_history)
                 user_message = chat_groq.invoke(message[0].content)
                 user_input = user_message.content
-                print(f"User: {user_message.content}")
+                with chat_container:
+                    st.write(f"**User:** {user_message.content}")
                 #user_input = input("User: ")
                 response = get_original_step(complete_step_tracking_reversed, user_input)
                 if response == "Number is out of range!" or response == "Wrong input format":
@@ -375,7 +376,8 @@ if start_chat and not st.session_state.stop:
 
         reply = chat_groq.invoke(guidance_prompt[0].content)
         response_to_user = reply.content
-        st.markdown(f"**Customer Service:** {response_to_user}")
+        with chat_container:
+            st.write(f"**Customer Service:** {response_to_user}")
 
         conversation_history_complete.append({"role": "user", "content": user_input})
         conversation_history_complete.append({"role": "customer service", "content": response_to_user})

@@ -1,0 +1,8 @@
+{
+    "name": "Python: Current File",
+    "type": "python",
+    "request": "launch",
+    "program": "${file}",
+    "python": "C:/home/oem/miniconda3/envs/myenv2/bin/python",
+    "console": "integratedTerminal"
+}
