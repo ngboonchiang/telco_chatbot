@@ -1,0 +1,12 @@
+streamlit
+langchain_groq
+langchain
+jsons
+logging
+pathlib
+streamlit_mic_recorder
+uuid
+requests
+bcrypt
+python-dotenv
+pymongo
