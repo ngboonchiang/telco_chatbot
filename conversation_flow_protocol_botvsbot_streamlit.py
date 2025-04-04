@@ -224,11 +224,21 @@ summaryprompt = ChatPromptTemplate.from_template(SUMMARY_PROMPT)
 st.set_page_config(page_title="Bilateral Conversational Chatbot")
 st.title("Bilateral Conversational Chatbot: Telco Customer Service Troubleshooting Scenario")
 
-start_chat = st.button("Start Conversation")
-stop_chat = st.button("Stop Conversation")
+# Sidebar controls
+with st.sidebar:
+    st.header("Controls")
+    start_chat = st.button("Start Conversation")
+    stop_chat = st.button("Stop Conversation")
 
+# Track session state
 if "stop" not in st.session_state:
     st.session_state.stop = False
+
+if stop_chat:
+    st.session_state.stop = True
+
+# Output container on main page
+chat_container = st.container()
 
 if stop_chat:
     st.session_state.stop = True
@@ -236,7 +246,8 @@ if stop_chat:
 if start_chat and not st.session_state.stop:
     current_step = "0 Introduction & Issue Confirmation"
     response_to_user = "How can I help you?"
-    st.markdown(f"**Customer Service:** {response_to_user}")
+    with chat_container:
+        st.write(f"**Customer Service:** {response_to_user}")
 
     conversation_history = []
     conversation_history_complete = []
@@ -251,14 +262,18 @@ if start_chat and not st.session_state.stop:
             message = telcouserprompt.format_messages(response_to_user=response_to_user, conversation_history=conversation_history)
             user_message = chat_groq.invoke(message[0].content)
             user_input = user_message.content
-            st.markdown(f"**User:** {user_input}")
+
+            with chat_container:
+                st.write(f"**User:** {user_input}")
+
             time.sleep(5)
             depends_on_context, relevant_context, how_context_relate_query = check_query_context(user_input, conversation_history)
             current_step = current_step.lower().replace("step ", "")
             matched_key = get_step_by_normalized_name(normalize(current_step), knowledge_base)
 
             if not matched_key:
-                st.error("❌ Step not found. Ending conversation.")
+                with chat_container:
+                    st.error("❌ Step not found. Ending conversation.")
                 break
 
             step_data = knowledge_base.get(matched_key)
