@@ -10,3 +10,4 @@ requests
 bcrypt
 python-dotenv
 pymongo
+langchain_together
