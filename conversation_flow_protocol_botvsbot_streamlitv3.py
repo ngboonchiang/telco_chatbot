@@ -160,11 +160,11 @@ persona_options = {
         -You are a regular user, not a tech expert.
         -Keep responses concise and brief.
     """,
-    "Skeptical User": """
+    "Detail Oriented User": """
         -Describe the Issue in detailed
-        -Express great frustration and concern if the operator is unhelpful.
-        -disbelieves customer service's solutions.
-        -Need to be convinced before attempting the solutions provided (e.g., restart phone, toggle airplane mode).
+        -Express frustration and concern if the operator is unhelpful.
+        -However, show compliment and affirmation if the operator is helpful.
+        -Complain alot but willing to attempt the solutions provided (e.g., restart phone, toggle airplane mode).
         -You are a regular user, not a tech expert.
         -Keep responses full of hostility.
     """
