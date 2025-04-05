@@ -6,7 +6,7 @@ from langchain_together import ChatTogether
 from langchain.prompts import ChatPromptTemplate
 import re
 import json
-from prompt_template import TELCO_USER_PROMPT, CONDITION_CHECK_PROMPTV2, CONDITION_CHECK_PROMPT, CUSTOMER_SERVICE_PROMPT, SUMMARY_PROMPT
+from prompt_template import TELCO_USER_PROMPT, CONDITION_CHECK_PROMPTV2, CONDITION_CHECK_PROMPT, CUSTOMER_SERVICE_PROMPT, SUMMARY_PROMPT, TELCO_USER_PROMPTV2
 import time
 from generate_structured_knowledgebase import knowledge_base
 
@@ -149,11 +149,41 @@ if not st.session_state.authenticated:
     elif password:
         st.sidebar.error("❌ Incorrect password.")
 
+# Persona options
+persona_options = {
+    "Cooperative User": """
+        -Describe the Issue Clearly
+        -Mention relevant details (e.g., location, device type, signal strength).
+        -Be patient if the operator is helpful.
+        -Express mild frustration or concern if the operator is unhelpful, but remain cooperative.
+        -Attempt the solutions provided (e.g., restart phone, toggle airplane mode).
+        -You are a regular user, not a tech expert.
+        -Keep responses concise and brief.
+    """,
+    "Skeptical User": """
+        -Describe the Issue in detailed
+        -Express great frustration and concern if the operator is unhelpful.
+        -disbelieves customer service's solutions.
+        -Need to be convinced before attempting the solutions provided (e.g., restart phone, toggle airplane mode).
+        -You are a regular user, not a tech expert.
+        -Keep responses full of hostility.
+    """
+}
+
 
 if st.session_state.authenticated:
+    selected_persona_label = st.sidebar.selectbox(
+        "🎭 Select User Persona",
+        options=list(persona_options.keys()),
+        index=0
+    )
+
+    user_persona = persona_options[selected_persona_label]
+
     if st.sidebar.button("Start"):
         st.session_state.running = True
         st.session_state.paused = False
+
     #if st.sidebar.button("Pause"):
     #    st.session_state.paused = True
     #if st.sidebar.button("Continue"):
@@ -172,6 +202,7 @@ if st.session_state.authenticated:
 
 st.title("Bilateral AI Customer Service Chatbot")
 
+
 # Load env
 load_dotenv()
 GROQ_API_KEY = os.environ["GROQ_API_KEY"]
@@ -179,6 +210,7 @@ TOGETHER_API_KEY = os.environ["TOGETHER_API_KEY"]
 
 # Setup prompts and models
 telcouserprompt = ChatPromptTemplate.from_template(TELCO_USER_PROMPT)
+telcouserpromptv2 = ChatPromptTemplate.from_template(TELCO_USER_PROMPTV2)
 conditioncheckprompt = ChatPromptTemplate.from_template(CONDITION_CHECK_PROMPTV2)
 customerserviceprompt = ChatPromptTemplate.from_template(CUSTOMER_SERVICE_PROMPT)
 summaryprompt = ChatPromptTemplate.from_template(SUMMARY_PROMPT)
@@ -234,7 +266,7 @@ if st.session_state.running:
         if 'intro_shown' not in st.session_state:
             st.session_state.intro_shown = False
 
-        response_to_user = ""
+        #response_to_user = ""
         if current_step == "0 Introduction & Issue Confirmation" and not st.session_state.intro_shown:
             response_to_user = "How can I help you?"
             st.session_state.conversation_history_complete.append({"role": "customer service", "content": response_to_user})
@@ -242,7 +274,7 @@ if st.session_state.running:
             type_message("AI", "🤖", response_to_user)
 
         if st.session_state.skip_key == 0:
-            message = telcouserprompt.format_messages(response_to_user=response_to_user, conversation_history=st.session_state.conversation_history)
+            message = telcouserpromptv2.format_messages(response_to_user=response_to_user, conversation_history=st.session_state.conversation_history, user_persona=user_persona)
             user_message = chat_groq.invoke(message[0].content)
             user_input = user_message.content
             type_message("user", "👤", user_input)
