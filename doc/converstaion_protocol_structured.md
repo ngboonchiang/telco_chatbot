@@ -163,7 +163,7 @@ g. Do allow moving to previous step if user requests for it
 *if the user confirmed they do not experience throttling-Step 2C.2 Reinserting SIM  
 *if the user has exceeded their data limit (remark:"close to," "almost," or "approaching," is NOT a match for exceeding)-Step 50 Summary  
 *if the user experienced throttling due to exceeding of data usage limit(remark:exceeding means 100% or more data usage)-Step 50 Summary  
-*if user confirmed data throttling policies or fair usage policies are applied to their account and they have exceeded the data threshold for speed reduction-Step 50 Summary    
+*if user confirmed data throttling policies or fair usage policies are applied to their account and they have also confirmed the data threshold stated in the policy has been exceeded-Step 50 Summary    
 *if data throttling policies or fair usage policies are not applied to their account-Step 2C.2 Reinserting SIM
 *if data throttling policies or fair usage policies are applied to their account but they have not exceeded the data threshold for speed reduction -Step 2C.2 Reinserting SIM
 *if the user has unlimited data plan-Step 2C.2 Reinserting SIM  

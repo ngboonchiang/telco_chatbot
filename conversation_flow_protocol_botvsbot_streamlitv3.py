@@ -143,7 +143,7 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state.authenticated:
     password = st.sidebar.text_input("Enter password to unlock controls", type="password")
-    if password == "sapientusmalaysia":
+    if password == "sapientus":
         st.session_state.authenticated = True
         st.sidebar.success("✅ Access granted.")
     elif password:
@@ -160,13 +160,12 @@ persona_options = {
         -You are a regular user, not a tech expert.
         -Keep responses concise and brief.
     """,
-    "Detail Oriented User": """
-        -Describe the Issue in detailed
-        -Express frustration and concern if the operator is unhelpful.
-        -However, show compliment and affirmation if the operator is helpful.
-        -Complain alot but willing to attempt the solutions provided (e.g., restart phone, toggle airplane mode).
+    "Impatient User": """
+        -You tend to describe the Issue briefly
+        -Prefer quick and instant solution
+        -you tend to be impatient and frustrated
+        -You are willing to attempt the solutions provided (e.g., restart phone, toggle airplane mode).
         -You are a regular user, not a tech expert.
-        -Keep responses full of hostility.
     """
 }
 
